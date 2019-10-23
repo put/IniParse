@@ -1,20 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Dynamic;
 using System.IO;
+using System.Dynamic;
+using System.Collections.Generic;
 
 namespace IniParse
 {
-    public class IniFile
+    public static class IniFile
     {
         public static ExpandoObject Parse(string path)
         {
-            dynamic iniFile = new ExpandoObject();
-
             using var fs = File.OpenRead(path);
             using var reader = new StreamReader(fs);
+
             string line;
             string lastSectionName = null;
+
+            var iniFile = new ExpandoObject();
+            var iniObjects = (IDictionary<string, object>)iniFile;
 
             while ((line = reader.ReadLine()) != null)
             {
@@ -26,15 +28,15 @@ namespace IniParse
                         {
                             string sectionName = IniParseHelper.GetSectionName(line);
                             lastSectionName = sectionName;
-                            ((IDictionary<string, object>)iniFile).Add(sectionName, new ExpandoObject());
+                            iniObjects.Add(sectionName, new ExpandoObject());
                             break;
                         }
                     case IniLineType.Property:
                         {
-                            var propertyDetails = IniParseHelper.GetProperty(line);
+                            (string name, object value) = IniParseHelper.GetProperty(line);
                             if (lastSectionName != null)
-                                ((IDictionary<string, object>)((IDictionary<string, object>)iniFile)[lastSectionName]).Add(propertyDetails.Name, propertyDetails.Value);
-                            else ((IDictionary<string, object>)iniFile).Add(propertyDetails.Name, propertyDetails.Value);
+                                ((IDictionary<string, object>)iniObjects[lastSectionName]).Add(name, value);
+                            else iniObjects.Add(name, value);
                             break;
                         }
                     case IniLineType.Comment:
@@ -43,9 +45,7 @@ namespace IniParse
                         continue;
                 }
             }
-
             return iniFile;
-
         }
     }
 }

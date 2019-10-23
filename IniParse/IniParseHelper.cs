@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Globalization;
 
 namespace IniParse
 {
@@ -8,7 +7,7 @@ namespace IniParse
     {
         public static IniLineType GetLineType(string line)
         {
-            if (line.Length == 0)
+            if (string.IsNullOrEmpty(line))
                 return IniLineType.Empty;
 
             if (line[0] == ';')
@@ -28,35 +27,12 @@ namespace IniParse
 
         public static (string Name, object Value) GetProperty(string line)
         {
-            int delimiterIndex = line.IndexOf('=');
-
-            if (delimiterIndex < 1)
+            if (!line.Contains('='))
                 throw new FormatException("Line is not a valid INI property");
 
-            while (line[delimiterIndex - 1]  == ' ')
-            {
-                if (delimiterIndex - 1 >= 0)
-                {
-                    line = line.Remove(delimiterIndex - 1, 1);
-                    delimiterIndex--;
-                }
-                else throw new FormatException("Line is not a valid INI property");
-            }
-
-            while (delimiterIndex + 1 < line.Length && line[delimiterIndex + 1] == ' ')
-            {
-                if (delimiterIndex + 1 == line.Length)
-                    break;
-                line = line.Remove(delimiterIndex + 1, 1);
-            }
-
-            string[] split = line.Split('=');
-
-            string propName = split[0];
-            dynamic propValue = split[1];
-
-            if (split.Length > 2)
-                propValue = string.Join(string.Empty, split[1..^1]);
+            int assignmentIndex = line.IndexOf('=');
+            string propName = line[..assignmentIndex].Trim();
+            dynamic propValue = line[(assignmentIndex + 1)..].Trim();
 
             if (propValue.Length > 0)
             {
@@ -72,19 +48,15 @@ namespace IniParse
         {
             if (int.TryParse(value, out int intResult))
                 return intResult;
-            if (double.TryParse(value, out double doubleResult))
+            if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double doubleResult))
                 return doubleResult;
-            if (value.ToLower()[^1] == 'f' && float.TryParse(value[..^1], out float forcedFloatResult))
+            if (value.ToLower()[^1] == 'f' && float.TryParse(value[..^1], NumberStyles.Any, CultureInfo.InvariantCulture, out float forcedFloatResult))
                 return forcedFloatResult;
-            if (value.ToLower()[^1] == 'd' && double.TryParse(value[..^1], out double forcedDoubleResult))
+            if (value.ToLower()[^1] == 'd' && double.TryParse(value[..^1], NumberStyles.Any, CultureInfo.InvariantCulture, out double forcedDoubleResult))
                 return forcedDoubleResult;
-            if (value.ToLower() == "true")
-                return true;
-            if (value.ToLower() == "false")
-                return false;
-            else return value;
-
+            if (bool.TryParse(value, out bool boolResult))
+                return boolResult;
+            return value;
         }
-        
     }
 }

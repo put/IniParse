@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace IniParse
+﻿namespace IniParse
 {
     public enum IniLineType
     {
